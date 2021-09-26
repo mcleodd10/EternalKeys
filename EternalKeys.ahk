@@ -1,18 +1,18 @@
-; EternalKeys v1 - double-tap to dash, and grenade shortcuts, by evilmanimani
+; EternalKeys v1.1 - double-tap to dash, and grenade shortcuts, by evilmanimani
 
+; Hit WinKey+F2 to reload script mid-game (if changing theme, etc)
 ;//////////// User Config ////////////
 doubleTaptoDash  := true
-, keyUpDelay     := 200 ; dash command will only fire if the first tap of the movement key is held for less than this amount of time (milliseconds)
-, keyDownDelay   := 200 ; number of milliseconds you have to hit the move movement key a second time 
-, holdToDash     := true ; whether holding the movement key will continue to dash repeatedly until released
+, keyUpDelay     := 200 ; dash command will only fire if the first tap of the forward key is held for less than this amount of time (milliseconds)
+, keyDownDelay   := 200 ; number of milliseconds you have to hit the move forward key a second time 
+, holdToDash     := true ; whether holding the forward key will continue to dash repeatedly until released
 ; Nade shortcut Key config
 , enableShortcut := true ; enable or disable the separate ice & frag grenade shortcuts, for best results, ensure the following keys aren't bound in-game
 , iceNadeKey     := "H" ; keyboard shortcut for ice grenade. frag grenade is bound to default grenade key set in-game
 , iceNadeMouse   := "XButton1" ; mouse button for ice grenade
 , nadeMouse      := "MButton" ; mouse button for frag grenade
 ; Nade shortcut options, only adjust if you're having problems
-, fragPath       := "nade.png" ; default dir is root of script
-, icePath        := "icenade.png"
+, refPath        := "refimages/" ;path to images folder
 , sensitivity    := 30 ; var for imagesearch function variation param
 , detectSpeed    := 50 ; in milliseconds, how often to check for change to the nade icon
 , diag           := false ; debug, shows tooltip indicating whether nade and/or icenade image is found
@@ -41,10 +41,11 @@ for idx, key in keyList {
     if (idx > 2)
         inputHook.KeyOpt("{" %key% "}", "E")
 }
-inputHook.KeyOpt("{" quickUse "}", "S")
+if (enableShortcut = true)
+    inputHook.KeyOpt("{" quickUse "}", "S")
+inputHook.KeyOpt("{F2}", "E")
 inputHook.OnEnd := Func("EndFunc")
 inputHook.NotifyNonText := true
-inputHook.OnKeyDown := Func("focusCheck")
 inputHook.Start()
 Hotkey, IfWinActive, DOOMEternal
 If (iceNadeMouse <> "")
@@ -63,20 +64,40 @@ Return
 
 focusCheck() {
     global
+    start := A_TickCount
     focused := WinActive("DOOMEternal")
     InputHook.KeyOpt("{" quickUse "}", focused ? "+S" : "+V")
     If focused {
-        WinGetPos, x, y, w, h, DOOMEternal
-        bottomRightCornerY := (y + h) - (h // 4)
-        bottomRightCornerX := (x + w) - (w // 4)
+        if (bottomRightCornerY = "" || bottomRightCornerY = "") {
+            sleep 500
+            WinGetPos, x, y, w, h, DOOMEternal
+            bottomRightCornerY := (y + h) - (h // 4)
+            bottomRightCornerX := (x + w) - (w // 4)
+            resPath := w "x" h "/"
+        }
+        if (!icePath || !fragPath) {
+            loop {
+                loop, files, % refPath . resPath . "*.png" 
+                {
+                    ImageSearch, , , %bottomRightCornerX%, %bottomRightCornerY%, % x + w, % y + h, *%sensitivity% *TransBlack %A_LoopFilePath%
+                    if !Errorlevel {
+                        fragPath := RegExReplace(A_LoopFilePath, "(ice|frag)", "frag")
+                        icePath := RegExReplace(A_LoopFilePath, "(ice|frag)", "ice")
+                        break 2
+                    }
+                }
+            }
+        }
         ImageSearch, , , %bottomRightCornerX%, %bottomRightCornerY%, % x + w, % y + h, *%sensitivity% *TransBlack %fragPath%
         elvl1 := Errorlevel
         ImageSearch, , , %bottomRightCornerX%, %bottomRightCornerY%, % x + w, % y + h, *%sensitivity% *TransBlack %icePath%
         elvl2 := Errorlevel
         if diag
         Tooltip, % "Nade: "  . (elvl1 ? "Not Found" : "Found")
-        . "`r`nIceNade: " . (elvl2 ? "Not Found" : "Found"), 0, 0
+        . "`r`nIceNade: " . (elvl2 ? "Not Found" : "Found")
+        . "`r`nTime: " . A_TickCount - start, 0, 0
     } else {
+        bottomRightCornerY := bottomRightCornerX := ""
         tooltip
     }
 }
@@ -107,7 +128,9 @@ EndFunc(ih) {
                 Send, % "{" quick1 "}"
                 Sleep 10
             }
-            Send, % "{" quickUse "}"
+            Send, % "{" quickUse "}{" quickuse " up}"
+        } else if (key = "F2" && (GetKeyState("LWin") || GetKeyState("RWin"))) {
+            Reload
         }
         ; } else if InStr(key,crucible) { ; doesn't work very reliably, still playing around with the timing
         ;     sleep 800

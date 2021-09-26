@@ -2,9 +2,9 @@
 
 ;//////////// User Config ////////////
 doubleTaptoDash  := true
-, keyUpDelay     := 200 ; dash command will only fire if the first tap of the forward key is held for less than this amount of time (milliseconds)
-, keyDownDelay   := 200 ; number of milliseconds you have to hit the move forward key a second time 
-, holdToDash     := true ; whether holding the forward key will continue to dash repeatedly until released
+, keyUpDelay     := 200 ; dash command will only fire if the first tap of the movement key is held for less than this amount of time (milliseconds)
+, keyDownDelay   := 200 ; number of milliseconds you have to hit the move movement key a second time 
+, holdToDash     := true ; whether holding the movement key will continue to dash repeatedly until released
 ; Nade shortcut Key config
 , enableShortcut := true ; enable or disable the separate ice & frag grenade shortcuts, for best results, ensure the following keys aren't bound in-game
 , iceNadeKey     := "H" ; keyboard shortcut for ice grenade. frag grenade is bound to default grenade key set in-game

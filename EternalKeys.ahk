@@ -60,8 +60,7 @@ Return
 iceNadeMouse:
 Send, % "{" iceNadeKey "}"
 Return
-; _attack1
-; _crucible
+
 focusCheck() {
     global
     focused := WinActive("DOOMEternal")

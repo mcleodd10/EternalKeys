@@ -1,28 +1,27 @@
 ; EternalKeys v1.1 - double-tap to dash, and grenade shortcuts, by evilmanimani
 
 ; Hit WinKey+F2 to reload script mid-game (if changing theme, etc)
-;//////////// User Config ////////////
-doubleTaptoDash  := true
-, keyUpDelay     := 200 ; dash command will only fire if the first tap of the movement key is held for less than this amount of time (milliseconds)
-, keyDownDelay   := 200 ; number of milliseconds you have to hit the move movement key a second time 
-, holdToDash     := true ; whether holding the movement key will continue to dash repeatedly until released
-; Nade shortcut Key config
-, enableShortcut := true ; enable or disable the separate ice & frag grenade shortcuts, for best results, ensure the following keys aren't bound in-game
-, iceNadeKey     := "H" ; keyboard shortcut for ice grenade. frag grenade is bound to default grenade key set in-game
-, iceNadeMouse   := "XButton1" ; mouse button for ice grenade
-, nadeMouse      := "MButton" ; mouse button for frag grenade
-; Nade shortcut options, only adjust if you're having problems
-, refPath        := "refimages/" ;path to images folder
-, sensitivity    := 30 ; var for imagesearch function variation param
-, detectSpeed    := 50 ; in milliseconds, how often to check for change to the nade icon
-, diag           := false ; debug, shows tooltip indicating whether nade and/or icenade image is found
-;/////////////////////////////////////
+; ;//////////// User Config ////////////
+iniValues := {doubleTaptoDash : true            ; enable dash
+            , keyUpDelay      : 200             ; dash command will only fire if the first tap of the movement key is held for less than this amount of time (milliseconds)
+            , keyDownDelay    : 200             ; number of milliseconds you have to hit the move movement key a second time 
+            , holdToDash      : true            ; whether holding the movement key will continue to dash repeatedly until released
+            , enableShortcut  : true            ; enable or disable the separate ice & frag grenade shortcuts, for best results, ensure the following keys aren't bound in-game
+            , iceNadeKey      : "H"             ; keyboard shortcut for ice grenade. frag grenade is bound to default grenade key set in-game
+            , iceNadeMouse    : "XButton1"      ; mouse button for ice grenade
+            , nadeMouse       : "MButton"       ; mouse button for frag grenade
+            , refPath         : "refimages/"    ; path to images folder
+            , sensitivity     : 30              ; var for imagesearch function variation param
+            , detectSpeed     : 50              ; in milliseconds, how often to check for change to the nade icon
+            , diag            : false}          ; debug, shows tooltip indicating whether nade and/or icenade image is found
 
 #Singleinstance, Force
 #Persistent
 #NoEnv
 SetBatchLines, -1
 
+for k, v in iniValues
+    IniRead, %k% , eternalkeys.ini, Config, % k, % v
 iceNadeKey := Format("{:L}",iceNadeKey)
 inputHook := InputHook("V")
 FileRead, doomCFG, % "C:\Users\" A_UserName "\Saved Games\id Software\DOOMEternal\base\DOOMEternalConfig.cfg"
@@ -56,30 +55,35 @@ Gui, Font,s10 Bold,Consolas
 Gui, Add, Checkbox, Checked%doubleTaptoDash% vdoubleTaptoDash gSubmit, Double tap to dash
 Gui, Font,Norm
 Gui, Add, Checkbox, Checked%holdToDash% vholdToDash gSubmit, Hold to dash
-Gui, Add, Edit, vkeyUpDelay Number gSubmit, % keyUpDelay
+Gui, Add, Edit, vkeyUpDelay Number gSubmit w35, % keyUpDelay
 Gui, Add, Text, x+2 yp+2,Key up delay (ms)
-Gui, Add, Edit, xm vkeyDownDelay Number gSubmit, % keyDownDelay
+Gui, Add, Edit, xm vkeyDownDelay Number gSubmit w35, % keyDownDelay
 Gui, Add, Text, x+2 yp+2,Key Down delay (ms)
 Gui, Add, Edit, xm w175 R5 +ReadOnly, % keyStr
 Gui, Font,Bold
 dashControls := ["holdToDash","keyUpDelay","keyDownDelay"]
-Gui, Add, Checkbox, ym Checked%enableShortcut% venableShortcut gSubmit, Enable grenade keys
+Gui, Add, Checkbox, Section ym Checked%enableShortcut% venableShortcut gSubmit, Enable grenade keys
 Gui, Font,Norm
-Gui, Add, Hotkey, viceNadeKey gSubmit, % iceNadeKey
+btnW := 85
+Gui, Add, Hotkey, viceNadeKey gSubmit w%btnW%, % iceNadeKey
+Gui, Add, Text, x+2 yp+2, Ice Grenade Key
 mouseDDL := "None|LButton|RButton|MButton|XButton1|XButton2"
-Gui, Add, DDL, viceNadeMouse gSubmit, % mouseDDL
+Gui, Add, DDL, xs w%btnW% viceNadeMouse gSubmit, % mouseDDL
 GuiControl, ChooseString, iceNadeMouse, % iceNadeMouse
-Gui, Add, DDL, vnadeMouse gSubmit, % mouseDDL
+Gui, Add, Text, x+2 yp+2, Ice Mouse Button
+Gui, Add, DDL, xs w%btnW% vnadeMouse gSubmit, % mouseDDL
 GuiControl, ChooseString, nadeMouse, % nadeMouse
-Gui, Add, Edit, Section vsensitivity Number gSubmit, % sensitivity
+Gui, Add, Text, x+2 yp+2, Frag Mouse Button
+Gui, Add, Edit, Section xs vsensitivity Number gSubmit, % sensitivity
 Gui, Add, Text, x+2 yp+2, Image search sensitivity
 Gui, Add, Edit, xs vdetectSpeed Number gSubmit, % detectSpeed
 Gui, Add, Text, x+2 yp+2, Detection frequency (ms)
 nadeControls := ["iceNadeKey","iceNadeMouse","nadeMouse","sensitivity","detectSpeed"]
 Gui, Add, Checkbox, xs Checked%diag% vdiag gSubmit, ImageSearch diag info
 Gui, Show
-keyDownDelay := keyDownDelay / 1000
-keyUpDelay := keyUpDelay / 1000
+keyDownDelay := keyDownDelay // 1000
+keyUpDelay := keyUpDelay // 1000
+GoSub, Submit
 Return
 
 Submit:
@@ -93,8 +97,10 @@ if (enableShortcut = true) {
 Gui, Submit, NoHide
 iceNadeMouse := iceNadeMouse = "None" ? "" : iceNadeMouse
 nadeMouse := nadeMouse = "None" ? "" : nadeMouse
-keyDownDelay := keyDownDelay / 1000
-keyUpDelay := keyUpDelay / 1000
+for k, v in iniValues
+    IniWrite, % %k%, eternalkeys.ini, Config, %k%
+keyDownDelay := keyDownDelay // 1000
+keyUpDelay := keyUpDelay // 1000
 If (iceNadeMouse <> "")
     Hotkey, %iceNadeMouse%, iceNadeMouse, On
 If (nadeMouse <> "")

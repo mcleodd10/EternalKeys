@@ -24,8 +24,6 @@ doubleTaptoDash  := true
 SetBatchLines, -1
 
 iceNadeKey := Format("{:L}",iceNadeKey)
-keyDownDelay := keyDownDelay / 1000
-keyUpDelay := keyUpDelay / 1000
 inputHook := InputHook("V")
 FileRead, doomCFG, % "C:\Users\" A_UserName "\Saved Games\id Software\DOOMEternal\base\DOOMEternalConfig.cfg"
 keyList := ["attack1","changeweapon","crucible","moveforward","moveback","moveleft","moveright","dash"]
@@ -35,11 +33,13 @@ if (enableShortcut = true) {
     SetTimer, %func% , %detectSpeed%
     inputHook.KeyOpt("{" iceNadeKey "}", "E")
 }
+keyStr := "cfg keybinds:`r`n"
 for idx, key in keyList {
     RegExMatch(doomCFG, "i)(?<=bind\s"").*(?=""\s""_" key """)" , %key%)
     %key% := Format("{:L}",%key%)
     if (idx > 2)
         inputHook.KeyOpt("{" %key% "}", "E")
+    keyStr .= Format("{:-14}{}`r`n",key ":",%key%)
 }
 if (enableShortcut = true)
     inputHook.KeyOpt("{" quickUse "}", "S")
@@ -52,7 +52,64 @@ If (iceNadeMouse <> "")
     Hotkey, %iceNadeMouse%, iceNadeMouse
 If (nadeMouse <> "")
     Hotkey, %nadeMouse%, nadeMouse
+Gui, Font,s10 Bold,Consolas
+Gui, Add, Checkbox, Checked%doubleTaptoDash% vdoubleTaptoDash gSubmit, Double tap to dash
+Gui, Font,Norm
+Gui, Add, Checkbox, Checked%holdToDash% vholdToDash gSubmit, Hold to dash
+Gui, Add, Edit, vkeyUpDelay Number gSubmit, % keyUpDelay
+Gui, Add, Text, x+2 yp+2,Key up delay (ms)
+Gui, Add, Edit, xm vkeyDownDelay Number gSubmit, % keyDownDelay
+Gui, Add, Text, x+2 yp+2,Key Down delay (ms)
+Gui, Add, Edit, xm w175 R5 +ReadOnly, % keyStr
+Gui, Font,Bold
+dashControls := ["holdToDash","keyUpDelay","keyDownDelay"]
+Gui, Add, Checkbox, ym Checked%enableShortcut% venableShortcut gSubmit, Enable grenade keys
+Gui, Font,Norm
+Gui, Add, Hotkey, viceNadeKey gSubmit, % iceNadeKey
+mouseDDL := "None|LButton|RButton|MButton|XButton1|XButton2"
+Gui, Add, DDL, viceNadeMouse gSubmit, % mouseDDL
+GuiControl, ChooseString, iceNadeMouse, % iceNadeMouse
+Gui, Add, DDL, vnadeMouse gSubmit, % mouseDDL
+GuiControl, ChooseString, nadeMouse, % nadeMouse
+Gui, Add, Edit, Section vsensitivity Number gSubmit, % sensitivity
+Gui, Add, Text, x+2 yp+2, Image search sensitivity
+Gui, Add, Edit, xs vdetectSpeed Number gSubmit, % detectSpeed
+Gui, Add, Text, x+2 yp+2, Detection frequency (ms)
+nadeControls := ["iceNadeKey","iceNadeMouse","nadeMouse","sensitivity","detectSpeed"]
+Gui, Add, Checkbox, xs Checked%diag% vdiag gSubmit, ImageSearch diag info
+Gui, Show
+keyDownDelay := keyDownDelay / 1000
+keyUpDelay := keyUpDelay / 1000
 Return
+
+Submit:
+If (iceNadeMouse <> "")
+    Hotkey, %iceNadeMouse%, iceNadeMouse, Off
+If (nadeMouse <> "")
+    Hotkey, %nadeMouse%, nadeMouse, Off
+if (enableShortcut = true) {
+    inputHook.KeyOpt("{" iceNadeKey "}", "-E")
+}
+Gui, Submit, NoHide
+iceNadeMouse := iceNadeMouse = "None" ? "" : iceNadeMouse
+nadeMouse := nadeMouse = "None" ? "" : nadeMouse
+keyDownDelay := keyDownDelay / 1000
+keyUpDelay := keyUpDelay / 1000
+If (iceNadeMouse <> "")
+    Hotkey, %iceNadeMouse%, iceNadeMouse, On
+If (nadeMouse <> "")
+    Hotkey, %nadeMouse%, nadeMouse, On
+if (enableShortcut = true) {
+    inputHook.KeyOpt("{" iceNadeKey "}", "E")
+}
+for _, ctrl in dashControls
+    GuiControl, Enable%doubleTaptoDash%, % ctrl
+for _, ctrl in nadeControls
+    GuiControl, Enable%enableShortcut%, % ctrl
+Return
+
+GuiClose:
+ExitApp
 
 nadeMouse:
 Send, % "{" quickUse "}"
@@ -126,7 +183,7 @@ EndFunc(ih) {
             || (elvl2 && InStr(key,iceNadeKey))
             || (elvl1 && elvl2)) {
                 Send, % "{" quick1 "}"
-                Sleep 10
+                Sleep, 20
             }
             Send, % "{" quickUse "}{" quickuse " up}"
         } else if (key = "F2" && (GetKeyState("LWin") || GetKeyState("RWin"))) {
